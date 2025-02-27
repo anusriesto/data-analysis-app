@@ -1,0 +1,15 @@
+[package]
+name = "data-analysis-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum ={ version = "0.8.1", features = ["multipart"] }
+axum-macros = "^0.4"
+csv="1.1"
+llm-chain="0.13.0"
+llm-chain-openai="0.13.0"
+serde = "1.0.218"
+serde_json = "1.0.139"
+tokio={version="1.25.0",features=["macros","rt-multi-thread"]}
+calamine="0.26.1"
