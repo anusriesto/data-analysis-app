@@ -13,6 +13,7 @@ use axum::{
 };
 use std::io::Cursor;
 
+use tower_http::cors::{CorsLayer, Any};
 use serde::{Deserialize,Serialize};
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
@@ -69,16 +70,22 @@ use llm_chain::{executor,parameters,prompt,step::Step};
 
 #[tokio::main]
 async fn main()->Result<(),Box<dyn Error>>{
+    let cors = CorsLayer::new()
+        .allow_origin(Any) // Allow requests from any domain (change this for production)
+        .allow_methods(Any)
+        .allow_headers(Any);
     let csv_data=Arc::new(Mutex::new(String::new()));
     let shared_state = Arc::new(Mutex::new(String::new()));
     let app=Router::new()
     .route("/upload", post(upload_file))
     .route("/ask", post(handle_request))
-    .with_state(csv_data);
+    .with_state(csv_data)
+    .layer(cors);
+
     
 
     //let listener=TcpListener::bind("127.0.0.1/8000").await?;
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:8000").await.unwrap();
     println!("🚀 Server running at successfully");
     axum::serve(listener, app).await.unwrap();
     Ok(())
