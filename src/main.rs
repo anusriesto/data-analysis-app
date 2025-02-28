@@ -77,8 +77,9 @@ async fn main()->Result<(),Box<dyn Error>>{
     .with_state(csv_data);
     
 
-    let listener=TcpListener::bind("127.0.0.1/3000").await?;
-    //println!("🚀 Server running at http://{}", listener);
+    //let listener=TcpListener::bind("127.0.0.1/8000").await?;
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
+    println!("🚀 Server running at successfully");
     axum::serve(listener, app).await.unwrap();
     Ok(())
 }
@@ -91,8 +92,8 @@ async fn upload_file(State(state):State<SharedState>,mut multipart:Multipart,)->
 
         let parsed_data=if filename.ends_with(".csv"){
             parse_csv(&data).await
-        } else if filename.ends_with(".xlsx"){
-            parse_excel(&data).await
+        // } else if filename.ends_with(".xlsx"){
+        //     parse_excel(&data).await
         }else {
             return Err(axum::http::StatusCode::BAD_REQUEST);
         };
@@ -115,27 +116,27 @@ async fn parse_csv(data:&[u8])->String{
     csv_data
 }
 
-async fn parse_excel(data:&[u8])->String{
-    let mut workbook=open_workbook_auto(Cursor::new(data)).unwrap();
-    let mut excel_data=String::new();
-    if let Ok(range)=workbook.worksheet_range("sheet1"){
-        for row in range.rows(){
-            let row_data:Vec<String>=row.iter().map(|c| c.to_string()).collect();
-            excel_data.push_str(&row_data.join(","));
-            excel_data.push('\n');
-        }
-    }
-    excel_data
+// async fn parse_excel(data:&[u8])->String{
+//     let mut workbook=open_workbook_auto(Cursor::new(data)).unwrap();
+//     let mut excel_data=String::new();
+//     if let Ok(range)=workbook.worksheet_range("sheet1"){
+//         for row in range.rows(){
+//             let row_data:Vec<String>=row.iter().map(|c| c.to_string()).collect();
+//             excel_data.push_str(&row_data.join(","));
+//             excel_data.push('\n');
+//         }
+//     }
+//     excel_data
 
-}
+// }
 
 //query Ai
-#[derive(Deserialize)]
+#[derive(Deserialize,Serialize)]
 struct UserRequest{
     prompt:String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize,Serialize)]
 struct AiResponse{
     response:String,
 }
@@ -144,17 +145,50 @@ async fn handle_request(
     State(state): State<SharedState>,
     Json(payload): Json<UserRequest>,
 ) -> Result<Json<AiResponse>, StatusCode> {
+    println!("📥 Received request: {:?}", payload.prompt); // ✅ Log request
+    
     let csv_data = state.lock().await.clone();
-        if csv_data.is_empty(){
-            return Ok(Json(AiResponse{response:"No data uploaded yet".to_string()}));
-        }
-
-        let prompt_string=format!("you are a data analyst, Your name is Anuj, Based on the presented data,answer the questions:
-        \n Question:{}\n\n DATA:\n{}",payload.prompt,csv_data);
-        let response_text = fake_ai_response(&prompt_string).await;
-        Ok(Json(AiResponse { response: response_text }))
-    } 
-
-    async fn fake_ai_response(prompt: &str) -> String {
-        format!("AI Response: {}", &prompt[..50.min(prompt.len())])
+    
+    if csv_data.is_empty() {
+        println!("⚠️ No data uploaded yet.");
+        return Ok(Json(AiResponse { response: "No data uploaded yet".to_string() }));
     }
+
+    let prompt_string = format!(
+        "You are a data analyst, Your name is Anuj. Based on the presented data, answer the questions:\n\
+        Question: {}\n\nDATA:\n{}",
+        payload.prompt, csv_data
+    );
+
+    println!("🧠 AI Processing Prompt..."); // ✅ Log before execution
+
+    let exec = executor!().map_err(|e| {
+        println!("❌ Executor Error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;  
+
+    let step = Step::for_prompt_template(prompt!("{}",&prompt_string));
+
+    let res = step.run(&parameters!(), &exec)
+        .await
+        .map_err(|e| {
+            println!("❌ AI Execution Error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let response_text = res.to_immediate()
+        .await
+        .map_err(|e| {
+            println!("❌ Response Extraction Error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .as_content()
+        .to_string();
+    
+    println!("✅ AI Response: {}", response_text); // ✅ Log final response
+    
+    Ok(Json(AiResponse { response: response_text }))
+}
+
+
+
