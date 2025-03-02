@@ -66,10 +66,9 @@ jobs:
          uses: appleboy/ssh-action@master
          with:
            host: ${{ vars.DROPLET_IP }}
-           username: ubuntu
+           username: root
            password: ${{ secrets.DROPLET_PASSWORD }}
            script: |
-             cd ~
              export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
              docker-compose down
              docker-compose pull
