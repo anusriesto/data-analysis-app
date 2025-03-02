@@ -38,7 +38,7 @@ jobs:
        - name: Build and push Docker image
          uses: docker/build-push-action@v5
          with:
-           context: .
+           context: .  # Change this if your Dockerfile is in a subfolder
            push: true
            tags: ${{ secrets.DOCKER_USERNAME }}/rust_analyser:latest
 
@@ -59,13 +59,8 @@ jobs:
        - name: Install sshpass
          run: sudo apt-get install -y sshpass
 
-       - name: Ensure Docker & Compose Installed on Droplet
-         run: sshpass -p "${{ secrets.DROPLET_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@${{ vars.DROPLET_IP }} 
-           "apt-get update && apt-get install -y docker.io docker-compose"
-         
-
        - name: Copy docker-compose.yml to droplet
-         run: sshpass -p "${{ secrets.DROPLET_PASSWORD }}" scp -o StrictHostKeyChecking=no docker-compose.yml root@${{ vars.DROPLET_IP }}:/root/rust-data-analyser/
+         run: sshpass -p "${{ secrets.DROPLET_PASSWORD }}" scp -o StrictHostKeyChecking=no docker-compose.yml root@${{ vars.DROPLET_IP }}:~
 
        - name: Deploy
          uses: appleboy/ssh-action@master
@@ -74,7 +69,8 @@ jobs:
            username: root
            password: ${{ secrets.DROPLET_PASSWORD }}
            script: |
-             cd /root/rust-data-analyser
+             cd /rust-data-analyser
              export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+             docker-compose down
              docker-compose pull
-             docker-compose up -d --pull always --build
+             docker-compose up -d
