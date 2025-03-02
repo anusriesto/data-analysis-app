@@ -62,7 +62,7 @@ jobs:
        - name: Ensure Docker & Compose Installed on Droplet
          run: sshpass -p "${{ secrets.DROPLET_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@${{ vars.DROPLET_IP }} "
            apt-get update && apt-get install -y docker.io docker-compose
-         "
+         
 
        - name: Copy docker-compose.yml to droplet
          run: sshpass -p "${{ secrets.DROPLET_PASSWORD }}" scp -o StrictHostKeyChecking=no docker-compose.yml root@${{ vars.DROPLET_IP }}:/root/rust-data-analyser/
