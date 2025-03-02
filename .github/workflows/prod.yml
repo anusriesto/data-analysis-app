@@ -66,7 +66,7 @@ jobs:
          uses: appleboy/ssh-action@master
          with:
            host: ${{ vars.DROPLET_IP }}
-           username: root
+           username: ubuntu
            password: ${{ secrets.DROPLET_PASSWORD }}
            script: |
              cd ~
