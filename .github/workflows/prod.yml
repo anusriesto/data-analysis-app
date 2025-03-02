@@ -69,7 +69,7 @@ jobs:
            username: root
            password: ${{ secrets.DROPLET_PASSWORD }}
            script: |
-             cd /rust-data-analyser
+             cd ~
              export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
              docker-compose down
              docker-compose pull
