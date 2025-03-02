@@ -1,3 +1,7 @@
 /target
 /ai-analyser/node_modules
+<<<<<<< HEAD
 
+=======
+.env
+>>>>>>> c612502 (server deployment)
