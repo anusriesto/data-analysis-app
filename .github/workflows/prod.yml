@@ -60,8 +60,8 @@ jobs:
          run: sudo apt-get install -y sshpass
 
        - name: Ensure Docker & Compose Installed on Droplet
-         run: sshpass -p "${{ secrets.DROPLET_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@${{ vars.DROPLET_IP }} "
-           apt-get update && apt-get install -y docker.io docker-compose
+         run: sshpass -p "${{ secrets.DROPLET_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@${{ vars.DROPLET_IP }} 
+           "apt-get update && apt-get install -y docker.io docker-compose"
          
 
        - name: Copy docker-compose.yml to droplet
